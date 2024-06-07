@@ -1,0 +1,23 @@
+[
+  {
+    "objectID": "video-to-speech.html",
+    "href": "video-to-speech.html",
+    "title": "Multimodal demo",
+    "section": "",
+    "text": "This is an example of how to simulate a video- and audio-aware model using existing LLM vision models (that take text and images as input, and generate text as output).\n\nimport os\nfrom pathlib import Path\n\nimport dotenv\nfrom openai import OpenAI\n\nfrom media_extractor import split_video\nimport datauri\n\n\n# Load OpenAI API key from .env file\ndotenv.load_dotenv()\nif os.environ.get(\"OPENAI_API_KEY\") is None:\n    raise ValueError(\"OPENAI_API_KEY not found in .env file\")\n\nclient = OpenAI()\n\nThis is the input video that we’ll turn into the user prompt.\n\nvideo_file = \"input.mov\"\n\nfrom IPython.display import Video\nVideo(video_file, width=320)\n\n\n      Your browser does not support the video element.\n    \n\n\nAt the time of this writing, the GPT-4o API doesn’t directly support video or audio input. Instead, we’ll decode the video into frames and feed them to the model as images, and decode the audio into text and feed it to the model as text.\n\naudio_uri, image_uris = split_video(video_file)\naudio_uri[:50]\n\n'data:audio/mpeg;base64,SUQzBAAAAAACXVRYWFgAAAASAAA'\n\n\nDecode the audio file into text, using OpenAI’s whisper-1 model. The result will serve as the text prompt for the LLM.\n\nwith datauri.as_tempfile(audio_uri) as audio_file:\n    transcription = client.audio.transcriptions.create(\n        model=\"whisper-1\", file=Path(audio_file)\n    )\n\nuser_prompt = transcription.text\nuser_prompt\n\n\"Can you describe what I'm wearing right now?\"\n\n\nWe’re ready to talk to the LLM: use the text and images as input, and get generated text back.\n\nresponse = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[\n        {\n            \"role\": \"user\",\n            \"content\": [\n                {\"type\": \"text\", \"text\": user_prompt},\n                *[\n                    {\n                        \"type\": \"image_url\",\n                        \"image_url\": {\"url\": image_uri, \"detail\": \"auto\"},\n                    }\n                    for image_uri in image_uris\n                ],\n            ],\n        },\n        {\n            \"role\": \"system\",\n            \"content\": Path(\"system_prompt.txt\").read_text(),\n        },\n    ],\n)\nresponse_text = response.choices[0].message.content\nresponse_text\n\n\"From what I can see in the video, you're wearing a gray top with a high, cozy collar. Looks comfy!\"\n\n\nUse OpenAI’s text-to-speech model to turn the generated text into audio.\n\naudio = client.audio.speech.create(\n    model=\"tts-1\",\n    voice=\"nova\",\n    input=response_text,\n    response_format=\"mp3\",\n)\nresponse_audio_uri = datauri.from_bytes(audio.read(), \"audio/mpeg\")\n\n\nwith datauri.as_tempfile(response_audio_uri) as response_audio_file:\n    from IPython.display import Audio\n    display(Audio(response_audio_file))\n\n\n                \n                    \n                    Your browser does not support the audio element."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Let’s use Quarto!",
+    "section": "",
+    "text": "This is a Quarto website to go along with the Quarto livestream at Tina Huang’s lunch and learn."
+  },
+  {
+    "objectID": "index.html#things-you-can-do-with-quarto",
+    "href": "index.html#things-you-can-do-with-quarto",
+    "title": "Let’s use Quarto!",
+    "section": "Things you can do with Quarto",
+    "text": "Things you can do with Quarto\n\nYour .ipynb files can become web pages, just by dropping them into a Quarto website folder. See the video-to-speech notebook for example.\n\nTo learn more about Quarto websites, visit https://quarto.org/docs/websites."
+  }
+]
