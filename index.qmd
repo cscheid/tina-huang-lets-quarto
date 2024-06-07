@@ -1,0 +1,11 @@
+---
+title: Let's use Quarto! 
+---
+
+This is a Quarto website to go along with the Quarto livestream at Tina Huang's lunch and learn.
+
+## Things you can do with Quarto
+
+- Your .ipynb files can become web pages, just by dropping them into a Quarto website folder. See  the [video-to-speech](./video-to-speech.ipynb) notebook for example.
+
+To learn more about Quarto websites, visit <https://quarto.org/docs/websites>.
